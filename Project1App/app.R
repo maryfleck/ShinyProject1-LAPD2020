@@ -1,51 +1,103 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
 library(ggplot2)
+library(DT)
+library(stringr)
+library(dplyr)
+library(tools)
+LAPD <- read_csv('Arrest_Data_from_2020_to_Present.csv')
 
-# Define UI for application that draws a histogram
+# Define UI for application that plots arrest data -----------
 ui <- fluidPage(
-   
-   # Application title
-   titlePanel("Old Faithful Geyser Data"),
-   
-   # Sidebar with a slider input for number of bins 
-   sidebarLayout(
-      sidebarPanel(
-         sliderInput("bins",
-                     "Number of bins:",
-                     min = 1,
-                     max = 50,
-                     value = 30)
-      ),
+  
+  # Application title -----------------------------------------------
+  titlePanel("LAPD Arrests"),
+  
+  # Sidebar layout with a input and output definitions --------------
+  sidebarLayout(
+    
+    # Inputs: Select variables to plot ------------------------------
+    sidebarPanel(
       
-      # Show a plot of the generated distribution
-      mainPanel(
-         plotOutput("distPlot")
-      )
-   )
+      # Select variable for x-axis ----------------------------------
+      selectInput(inputId = "x", 
+                  label = "X-axis:",
+                  choices = c("Race and Ethnicity" = "`Descent Code`", 
+                              "Sex" = "`Sex Code`", 
+                              "Arrest Type" = "`Arrest Type Code`"), 
+                  selected = "Descent Code"),
+      
+      # Show data table ---------------------------------------------
+      checkboxInput(inputId = "show_data",
+                    label = "Show data table",
+                    value = TRUE),
+      
+      # Enter text for plot title ---------------------------------------------
+      textInput(inputId = "plot_title", 
+                label = "Plot title", 
+                placeholder = "Enter text to be used as plot title"),
+      
+      # Horizontal line for visual separation -----------------------
+      hr(),
+      
+      # Select which areas to include ------------------------
+      selectInput(inputId = "selected_hood",
+                  label = "Select area(s):",
+                  choices = unique(LAPD$`Area Name`),
+                  multiple = TRUE),
+    ),
+    
+    # Output: -------------------------------------------------------
+    mainPanel(
+      
+      # Show barplot --------------------------------------------
+      plotOutput(outputId = "barplot"),
+      br(),        # a little bit of visual separation
+      
+      # Print number of obs plotted ---------------------------------
+      uiOutput(outputId = "n"),
+      br(), br(),    # a little bit of visual separation
+      
+      # Show data table ---------------------------------------------
+      DT::dataTableOutput(outputId = "moviestable")
+    )
+  )
 )
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
-   
-   output$distPlot <- renderPlot({
-      # generate bins based on input$bins from ui.R
-      x    <- faithful[, 2] 
-      bins <- seq(min(x), max(x), length.out = input$bins + 1)
-      
-      # draw the histogram with the specified number of bins
-      hist(x, breaks = bins, col = 'darkgray', border = 'white')
-   })
+# Define server function required to create the barplot ---------
+server <- function(input, output, session) {
+  
+  # Create a subset of data filtering for selected title types ------
+  LAPD_subset <- reactive({
+    req(input$selected_hood) # ensure availablity of value before proceeding
+    filter(LAPD, `Area Name` %in% input$selected_hood)
+  })
+  
+  # Convert plot_title toTitleCase ----------------------------------
+  pretty_plot_title <- reactive({ toTitleCase(input$plot_title) })
+  
+  
+  # Create barplot object the plotOutput function is expecting --
+  output$barplot <- renderPlot({
+    ggplot(data = LAPD_subset(), aes_string(x = input$x)) +
+      geom_bar() +
+      labs(x = toTitleCase(str_replace_all(input$y, "_", " ")),
+           y = 'Arrest Count',
+           color = toTitleCase(str_replace_all(input$z, "_", " ")),
+           title = pretty_plot_title()
+      )
+  })
+  
+  
+  # Print data table if checked -------------------------------------
+  output$moviestable <- DT::renderDataTable(
+    if(input$show_data){
+      DT::datatable(data = LAPD_subset()[,c(3,4,6,8:10,12:15,22)], 
+                    options = list(pageLength = 10), 
+                    rownames = FALSE)
+    }
+  )
 }
 
-# Run the application 
+# Run the application -----------------------------------------------
 shinyApp(ui = ui, server = server)
 
