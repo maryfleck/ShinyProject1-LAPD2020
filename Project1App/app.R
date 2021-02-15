@@ -4,6 +4,7 @@ library(DT)
 library(stringr)
 library(dplyr)
 library(tools)
+library(shinyWidgets)
 LAPD <- read_csv('Arrest_Data_from_2020_to_Present.csv')
 
 # Define UI for application that plots arrest data -----------
@@ -40,9 +41,10 @@ ui <- fluidPage(
       hr(),
       
       # Select which areas to include ------------------------
-      selectInput(inputId = "selected_hood",
+      pickerInput(inputId = "selected_hood",
                   label = "Select area(s):",
                   choices = unique(LAPD$`Area Name`),
+                  options = list(`actions-box` = TRUE),
                   multiple = TRUE),
     ),
     
@@ -52,6 +54,11 @@ ui <- fluidPage(
       # Show barplot --------------------------------------------
       plotOutput(outputId = "barplot"),
       br(),        # a little bit of visual separation
+      
+      # Show piechart --------------------------------------------
+      plotOutput(outputId = "pie"),
+      br(),        # a little bit of visual separation
+      
       
       # Print number of obs plotted ---------------------------------
       uiOutput(outputId = "n"),
@@ -84,6 +91,17 @@ server <- function(input, output, session) {
            y = 'Arrest Count',
            color = toTitleCase(str_replace_all(input$z, "_", " ")),
            title = pretty_plot_title()
+      )
+  })
+  
+  
+  # Create pie chart of offenses
+  output$pie <- renderPlot({
+    ggplot(data=LAPD_subset(), aes(x="",fill=`Charge Group Description`)) +
+      geom_bar(width=1) +
+      coord_polar("y", start=0) +
+      labs(x = 'Percentage of Arrests',
+           title = 'Breakdown of Offenses'
       )
   })
   
