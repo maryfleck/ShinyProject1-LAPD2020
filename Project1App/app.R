@@ -51,6 +51,10 @@ ui <- fluidPage(
     # Output: -------------------------------------------------------
     mainPanel(
       
+      # Show timeplot --------------------------------------------
+      plotOutput(outputId = "timeplot"),
+      br(),        # a little bit of visual separation
+      
       # Show barplot --------------------------------------------
       plotOutput(outputId = "barplot"),
       br(),        # a little bit of visual separation
@@ -82,6 +86,22 @@ server <- function(input, output, session) {
   # Convert plot_title toTitleCase ----------------------------------
   pretty_plot_title <- reactive({ toTitleCase(input$plot_title) })
   
+  # Create scatter/line plot with count of arrests per time period --
+      # first get totals
+      time_data <- LAPD %>% group_by(`Booking Date`) %>% summarise(count=n())
+  
+  
+  output$timeplot <- renderPlot({
+    ggplot(data = time_data, aes_string(x = '`Booking Date`', y='count')) +
+      geom_point() +
+      geom_line() +
+      theme(axis.text.x = element_text(angle = 45)) +
+      labs(x = 'Date',
+           y = 'Arrest Count',
+           color = toTitleCase(str_replace_all(input$z, "_", " ")),
+           title = 'Arrests over Time'
+      )
+  })
   
   # Create barplot object the plotOutput function is expecting --
   output$barplot <- renderPlot({
