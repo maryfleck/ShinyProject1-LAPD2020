@@ -5,13 +5,14 @@ library(stringr)
 library(dplyr)
 library(tools)
 library(shinyWidgets)
-LAPD <- read_csv('Arrest_Data_from_2020_to_Present.csv')
+library(tidyverse)
+LAPD <- read_csv('LAPD_updated.csv')
 
 # Define UI for application that plots arrest data -----------
 ui <- fluidPage(
   
   # Application title -----------------------------------------------
-  titlePanel("LAPD Arrests"),
+  titlePanel("LAPD Arrests: Special Events 2020"),
   
   # Sidebar layout with a input and output definitions --------------
   sidebarLayout(
@@ -24,7 +25,8 @@ ui <- fluidPage(
                   label = "X-axis:",
                   choices = c("Race and Ethnicity" = "`Descent Code`", 
                               "Sex" = "`Sex Code`", 
-                              "Arrest Type" = "`Arrest Type Code`"), 
+                              "Arrest Type" = "`Arrest Type Code`", 
+                              "Area" = "`Area Name`"), 
                   selected = "Descent Code"),
       
       # Show data table ---------------------------------------------
@@ -43,7 +45,14 @@ ui <- fluidPage(
       # Select which areas to include ------------------------
       pickerInput(inputId = "selected_hood",
                   label = "Select area(s):",
-                  choices = unique(LAPD$`Area Name`),
+                  choices = sort(unique(LAPD$`Area Name`)),
+                  options = list(`actions-box` = TRUE),
+                  multiple = TRUE),
+      
+      # Select which week to include ------------------------
+      pickerInput(inputId = "selected_week",
+                  label = "Select week(s):",
+                  choices = sort(unique(LAPD$week)),
                   options = list(`actions-box` = TRUE),
                   multiple = TRUE),
     ),
@@ -80,7 +89,7 @@ server <- function(input, output, session) {
   # Create a subset of data filtering for selected title types ------
   LAPD_subset <- reactive({
     req(input$selected_hood) # ensure availablity of value before proceeding
-    filter(LAPD, `Area Name` %in% input$selected_hood)
+    filter(LAPD, `Area Name` %in% input$selected_hood & week %in% input$selected_week)
   })
   
   # Convert plot_title toTitleCase ----------------------------------
@@ -88,13 +97,13 @@ server <- function(input, output, session) {
   
   # Create scatter/line plot with count of arrests per time period --
       # first get totals
-      time_data <- LAPD %>% group_by(`Booking Date`) %>% summarise(count=n())
+  #    time_data <- LAPD %>% group_by(`Booking Date`) %>% summarise(count=n())
   
   
   output$timeplot <- renderPlot({
-    ggplot(data = time_data, aes_string(x = '`Booking Date`', y='count')) +
-      geom_point() +
-      geom_line() +
+    ggplot(data = LAPD_subset(), aes_string(x = 'date')) +
+      geom_bar() +
+      geom_text(aes(label=stat(count)), stat='count', nudge_y=100) +
       theme(axis.text.x = element_text(angle = 45)) +
       labs(x = 'Date',
            y = 'Arrest Count',
@@ -129,7 +138,7 @@ server <- function(input, output, session) {
   # Print data table if checked -------------------------------------
   output$moviestable <- DT::renderDataTable(
     if(input$show_data){
-      DT::datatable(data = LAPD_subset()[,c(3,4,6,8:10,12:15,22)], 
+      DT::datatable(data = LAPD_subset()[,c(5,7,9:11,13:16,28)], 
                     options = list(pageLength = 10), 
                     rownames = FALSE)
     }
