@@ -55,6 +55,11 @@ ui <- fluidPage(
                   choices = sort(unique(LAPD$week)),
                   options = list(`actions-box` = TRUE),
                   multiple = TRUE),
+      
+      # Write filtered data as csv ------------------------------------------
+      actionButton(inputId = "write_csv", 
+                   label = "Write CSV")
+      
     ),
     
     # Output: -------------------------------------------------------
@@ -130,8 +135,7 @@ server <- function(input, output, session) {
       geom_bar(width=1) +
       coord_polar("y", start=0) +
       labs(x = 'Percentage of Arrests',
-           title = 'Breakdown of Offenses'
-      )
+           title = 'Breakdown of Offenses')
   })
   
   
@@ -141,8 +145,14 @@ server <- function(input, output, session) {
       DT::datatable(data = LAPD_subset()[,c(5,7,9:11,13:16,28)], 
                     options = list(pageLength = 10), 
                     rownames = FALSE)
-    }
-  )
+    })
+  
+  # Write sampled data as csv ---------------------------------------
+  observeEvent(eventExpr = input$write_csv, 
+               handlerExpr = {
+                 filename <- paste0("LAPD_", str_replace_all(Sys.time(), ":|\ ", "_"), ".csv")
+                 write.csv(LAPD_subset(), file = filename, row.names = FALSE) 
+  })
 }
 
 # Run the application -----------------------------------------------
