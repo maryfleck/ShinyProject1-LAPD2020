@@ -6,10 +6,15 @@ library(dplyr)
 library(tools)
 library(shinyWidgets)
 library(tidyverse)
+library(bslib)
+
 LAPD <- read_csv('LAPD_updated.csv')
 
 # Define UI for application that plots arrest data -----------
 ui <- fluidPage(
+  
+  # Theme -----------------------------------------------
+  theme = bs_theme(version=4, bootswatch='journal'),
   
   # Application title -----------------------------------------------
   titlePanel("LAPD Arrests: Special Events 2020"),
@@ -107,8 +112,9 @@ server <- function(input, output, session) {
   
   output$timeplot <- renderPlot({
     ggplot(data = LAPD_subset(), aes_string(x = 'date')) +
-      geom_bar() +
-      geom_text(aes(label=stat(count)), stat='count', nudge_y=100) +
+      geom_point(stat='count') +
+      geom_line(stat='count', alpha=0.3) +
+      geom_text(aes(label=stat(count)), stat='count', nudge_y=5) +
       theme(axis.text.x = element_text(angle = 45)) +
       labs(x = 'Date',
            y = 'Arrest Count',
@@ -121,6 +127,7 @@ server <- function(input, output, session) {
   output$barplot <- renderPlot({
     ggplot(data = LAPD_subset(), aes_string(x = input$x)) +
       geom_bar() +
+      geom_text(aes(label=stat(count)), stat='count', nudge_y=100) +
       labs(x = toTitleCase(str_replace_all(input$y, "_", " ")),
            y = 'Arrest Count',
            color = toTitleCase(str_replace_all(input$z, "_", " ")),
