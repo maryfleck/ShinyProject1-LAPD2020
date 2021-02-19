@@ -25,28 +25,6 @@ ui <- fluidPage(
     # Inputs: Select variables to plot ------------------------------
     sidebarPanel(
       
-      # Select variable for x-axis ----------------------------------
-      selectInput(inputId = "x", 
-                  label = "X-axis:",
-                  choices = c("Race and Ethnicity" = "`Descent Code`", 
-                              "Sex" = "`Sex Code`", 
-                              "Arrest Type" = "`Arrest Type Code`", 
-                              "Area" = "`Area Name`"), 
-                  selected = "Descent Code"),
-      
-      # Show data table ---------------------------------------------
-      checkboxInput(inputId = "show_data",
-                    label = "Show data table",
-                    value = TRUE),
-      
-      # Enter text for plot title ---------------------------------------------
-      textInput(inputId = "plot_title", 
-                label = "Plot title", 
-                placeholder = "Enter text to be used as plot title"),
-      
-      # Horizontal line for visual separation -----------------------
-      hr(),
-      
       # Select which areas to include ------------------------
       pickerInput(inputId = "selected_hood",
                   label = "Select area(s):",
@@ -60,6 +38,32 @@ ui <- fluidPage(
                   choices = sort(unique(LAPD$week)),
                   options = list(`actions-box` = TRUE),
                   multiple = TRUE),
+      
+      # Horizontal line for visual separation -----------------------
+      hr(),
+      
+      # Enter text for plot title ---------------------------------------------
+      textInput(inputId = "plot_title", 
+                label = "Plot title", 
+                placeholder = "Enter text to be used as plot title"),
+      
+      # Select variable for x-axis ----------------------------------
+      selectInput(inputId = "x", 
+                  label = "X-axis:",
+                  choices = c("Race and Ethnicity" = "`Descent Code`", 
+                              "Sex" = "`Sex Code`", 
+                              "Arrest Type" = "`Arrest Type Code`", 
+                              "Area" = "`Area Name`"), 
+                  selected = "Descent Code"),
+      
+      # Horizontal line for visual separation -----------------------
+      hr(),
+      
+      # Show data table ---------------------------------------------
+      checkboxInput(inputId = "show_data",
+                    label = "Show data table",
+                    value = TRUE),
+      
       
       # Write filtered data as csv ------------------------------------------
       actionButton(inputId = "write_csv", 
