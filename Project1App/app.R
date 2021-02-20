@@ -25,6 +25,7 @@ ui <- fluidPage(
     # Inputs: Select variables to plot ------------------------------
     sidebarPanel(
       
+      
       # Select which areas to include ------------------------
       pickerInput(inputId = "selected_hood",
                   label = "Select area(s):",
@@ -39,13 +40,33 @@ ui <- fluidPage(
                   options = list(`actions-box` = TRUE),
                   multiple = TRUE),
       
+      # Add text to describe the purpose of the app --------------------
+      h6("Weeks 9-11 encompass the weeks before, during, and after a state of emergency was declared because of COVID-19."),
+      h6("Weeks 21-23 encompass the weeks before, during, and after the murder of George Floyd at the hands of police."),
+      
       # Horizontal line for visual separation -----------------------
       hr(),
       
       # Enter text for plot title ---------------------------------------------
-      textInput(inputId = "plot_title", 
-                label = "Plot title", 
-                placeholder = "Enter text to be used as plot title"),
+      textInput(inputId = "line_plot_title", 
+                label = "Line plot title", 
+                placeholder = "Enter text to be used as line plot title"),
+      
+      # Select variable to group by ----------------------------------
+      selectInput(inputId = "group", 
+                  label = "Group Arrests by:",
+                  choices = c("Race and Ethnicity" = "`Descent Code`", 
+                              "Sex" = "`Sex Code`", 
+                              "Arrest Type" = "`Arrest Type Code`")),
+      
+      
+      # Horizontal line for visual separation -----------------------
+      hr(),
+      
+      # Enter text for plot title ---------------------------------------------
+      textInput(inputId = "bar_plot_title", 
+                label = "Bar plot title", 
+                placeholder = "Enter text to be used as bar plot title"),
       
       # Select variable for x-axis ----------------------------------
       selectInput(inputId = "x", 
@@ -74,7 +95,10 @@ ui <- fluidPage(
     # Output: -------------------------------------------------------
     mainPanel(
       
-      # Show timeplot --------------------------------------------
+      # Show timeplots --------------------------------------------
+      plotOutput(outputId = "timeplot0"),
+      br(),        # a little bit of visual separation
+      
       plotOutput(outputId = "timeplot"),
       br(),        # a little bit of visual separation
       
@@ -107,14 +131,14 @@ server <- function(input, output, session) {
   })
   
   # Convert plot_title toTitleCase ----------------------------------
-  pretty_plot_title <- reactive({ toTitleCase(input$plot_title) })
+  pretty_lineplot_title <- reactive({ toTitleCase(input$line_plot_title) })
+  pretty_barplot_title <- reactive({ toTitleCase(input$bar_plot_title) })
   
   # Create scatter/line plot with count of arrests per time period --
       # first get totals
   #    time_data <- LAPD %>% group_by(`Booking Date`) %>% summarise(count=n())
   
-  
-  output$timeplot <- renderPlot({
+  output$timeplot0 <- renderPlot({
     ggplot(data = LAPD_subset(), aes_string(x = 'date')) +
       geom_point(stat='count') +
       geom_line(stat='count', alpha=0.3) +
@@ -122,8 +146,19 @@ server <- function(input, output, session) {
       theme(axis.text.x = element_text(angle = 45)) +
       labs(x = 'Date',
            y = 'Arrest Count',
-           color = toTitleCase(str_replace_all(input$z, "_", " ")),
-           title = 'Arrests over Time'
+           title = 'Daily Arrest Count'
+      )
+  })
+  
+  output$timeplot <- renderPlot({
+    ggplot(data = LAPD_subset(), aes_string(x = 'date', group=input$group, color=input$group)) +
+      geom_point(stat='count') +
+      geom_line(stat='count', alpha=0.3) +
+      geom_text(aes(label=stat(count)), stat='count', nudge_y=5) +
+      theme(axis.text.x = element_text(angle = 45)) +
+      labs(x = 'Date',
+           y = 'Arrest Count',
+           title = pretty_lineplot_title()
       )
   })
   
@@ -132,10 +167,10 @@ server <- function(input, output, session) {
     ggplot(data = LAPD_subset(), aes_string(x = input$x)) +
       geom_bar() +
       geom_text(aes(label=stat(count)), stat='count', nudge_y=100) +
-      labs(x = toTitleCase(str_replace_all(input$y, "_", " ")),
+      labs(x = input$x,
            y = 'Arrest Count',
            color = toTitleCase(str_replace_all(input$z, "_", " ")),
-           title = pretty_plot_title()
+           title = pretty_barplot_title()
       )
   })
   
