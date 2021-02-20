@@ -1,0 +1,13 @@
+name: Project1App_LAPD20
+title: Project1App_LAPD20
+username:
+account: marycfleck
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3668034
+bundleId: 4247053
+url: https://marycfleck.shinyapps.io/Project1App_LAPD20/
+when: 1613780747.55853
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: Arrest_Data_from_2020_to_Present.csv|data_prep.R
